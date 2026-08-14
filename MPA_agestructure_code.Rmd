@@ -1,0 +1,115 @@
+### Below you will find the code associated with "Marine Protected Areas improve age structure of tropical Pacific tunas" by Jaskiel et al.
+### All code and data can be found on GitHub (https://github.com/jaskielj/MPA-Effects-on-Tropical-Tuna-Size-Structure) and Zenodo ()
+
+### Set Directory, Install/library packages, & bring in data
+```{r}
+setwd("/Users/Jacob/Documents/MPA Effects on Tuna Size Structure")
+getwd()
+
+library(tidyverse)
+library(ggridges)
+
+length <- read_rds("wcpfc_length_data.rds")
+```
+
+### Hawaii Catch - Longline
+```{r}
+### Bigeye
+hawaii_bet <- length |>
+  filter(between(lon, -165, -145), # Filter around Hawaii
+         between(lat, 15, 25),
+         year > 2000, # Keep 2000 > records
+         species == "BET", # Keep bigeye tuna only
+         gear == "longline") |> # Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ # uncount(freq) |>
+  select(yq, species, length_cm)
+
+### geartypes are handline_large, handline_small, longline, pole_line, purse_seine, ringnet, troll 
+
+### Plot them
+#png("BET_hawaii.png", units = "in", width = 6, height = 5, res = 1200)
+ggplot(data = hawaii_bet,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
+
+# Hov-moller-style
+hawaii_bet |>
+  mutate(length_10 = floor(length_cm / 10) + 5) |>
+  count(yq, length_10) |>
+  group_by(yq) |>
+  mutate(frac = n / sum(n)) |> # Normalize by quarter
+  ggplot(mapping = aes(x = length_10, y = yq, fill = frac)) +
+  geom_tile()
+
+
+### Yellowfin
+hawaii_yft <- length |>
+  filter(between(lon, -165, -145), # Filter around Hawaii
+         between(lat, 15, 25),
+         year > 2000, # Keep 2000 > records
+         species == "YFT", # Keep yft only
+         gear == "longline") |> # Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ # uncount(freq) |>
+  select(yq, species, length_cm)
+ 
+### Plot them
+#png("YFT_5deg_equator.png", units = "in", width = 6, height = 5, res = 1200)
+ggplot(data = hawaii_yft,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
+
+# Hov-moller-style
+hawaii_yft |>
+  mutate(length_10 = floor(length_cm / 10) + 5) |>
+  count(yq, length_10) |>
+  group_by(yq) |>
+  mutate(frac = n / sum(n)) |> # Normalize by quarter
+  ggplot(mapping = aes(x = length_10, y = yq, fill = frac)) +
+  geom_tile()
+
+
+### Skipjack
+hawaii_skj <- length |>
+  filter(between(lon, -178, -155), # Filter around Hawaii
+         between(lat, -15, 20),
+         year > 2000, # Keep 2000 > records
+         species == "SKJ", # Keep bigeye tuna only
+         gear == "purse_seine") |> # Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ # uncount(freq) |>
+  select(yq, species, length_cm)
+       
+
+### Plot them
+#png("SKJ_purse_seine_S261-S287_Cruisetrack.png", units = "in", width = 6, height = 5, res = 1200)
+ggplot(data = hawaii_skj,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
+
+# Hov-moller-style
+hawaii_skj |>
+  mutate(length_10 = floor(length_cm / 10) + 5) |>
+  count(yq, length_10) |>
+  group_by(yq) |>
+  mutate(frac = n / sum(n)) |> # Normalize by quarter
+  ggplot(mapping = aes(x = length_10, y = yq, fill = frac)) +
+  geom_tile()
+```
+
