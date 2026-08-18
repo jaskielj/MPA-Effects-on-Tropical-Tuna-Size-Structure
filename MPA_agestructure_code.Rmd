@@ -10,6 +10,8 @@ library(tidyverse)
 library(ggridges)
 
 length <- read_rds("wcpfc_length_data.rds")
+catch_purse_seine <- read_rds("allrfmo_month_1deg_purseseine.rds")
+catch_longline <- read_rds("allrfmo_month_5deg_longline_flag.rds")
 ```
 
 ### Hawaii Catch - Longline
@@ -111,5 +113,649 @@ hawaii_skj |>
   mutate(frac = n / sum(n)) |> # Normalize by quarter
   ggplot(mapping = aes(x = length_10, y = yq, fill = frac)) +
   geom_tile()
+```
+
+
+
+
+### Exploring Tuna Length in and around MPAs
+```{r}
+## Starting with PIPA (MPA only; see MPA + buffer zone below)
+
+### PIPA Longline bigeye pre protections
+PIPA_LL_bet_length_BP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2000, 2014), ### Keep records between 2000 and 2014
+         species == "BET", ### Keep bigeye tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_LL_bet_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### PIPA longline bigeye during protection
+PIPA_LL_bet_length_DP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2015, 2022), ### Keep records between 2015 and 2022
+         species == "BET", ### Keep bigeye tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_LL_bet_length_DP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### PIPA longline bigeye after protections lifted
+PIPA_LL_bet_length_AP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2023, 2025), ### Keep records between 2015 and 2022
+         species == "BET", ### Keep bigeye tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_LL_bet_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+### PIPA Bigeye from purse-seine
+```{r}
+### PIPA purse-seine bigeye pre protections
+PIPA_PS_bet_length_BP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2000, 2014), ### Keep records between 2000 and 2014
+         species == "BET", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse-seine
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_PS_bet_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### PIPA purse-seine bigeye during protections
+PIPA_PS_bet_length_DP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2015, 2022), ### Keep records between 2000 and 2014
+         species == "BET", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse-seine
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_PS_bet_length_DP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### PIPA purse-seine bigeye after protections
+PIPA_PS_bet_length_AP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2023, 2025), ### Keep records between 2000 and 2014
+         species == "BET", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse-seine
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_PS_bet_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+### Yellowfin longline in PIPA
+```{r}
+### Yellowfin longline before protections
+PIPA_LL_yft_length_BP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 1953, 2014), ### Keep records between 2000 and 2014
+         species == "YFT", ### Keep bigeye tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_LL_yft_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Yellowfin longline during protections
+PIPA_LL_yft_length_DP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2015, 2022), ### Keep records between 2000 and 2014
+         species == "YFT", ### Keep bigeye tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_LL_yft_length_DP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Yellowfin longline after protections
+PIPA_LL_yft_length_AP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2023, 2025), ### Keep records between 2000 and 2014
+         species == "YFT", ### Keep bigeye tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_LL_yft_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+### Yellowfin purse-seine in PIPA
+```{r}
+### Yellowfin purse-seine before protections
+PIPA_PS_yft_length_BP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 1953, 2014), ### Keep records between 2000 and 2014
+         species == "YFT", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse_seine
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_PS_yft_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Yellowfin purse-seine during protections
+PIPA_PS_yft_length_DP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2015, 2022), ### Keep records between 2000 and 2014
+         species == "YFT", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse_seine
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_PS_yft_length_DP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Yellowfin purse-seine after protections
+PIPA_PS_yft_length_AP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2023, 2025), ### Keep records between 2000 and 2014
+         species == "YFT", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse-seine
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_PS_yft_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+### Skipjack longline (not major component but still looking) in PIPA 
+```{r}
+### Skipjack longline before protections
+PIPA_LL_skj_length_BP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 1953, 2014), ### Keep records between 2000 and 2014
+         species == "SKJ", ### Keep skipjack tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_LL_skj_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Skipjack longline during protections
+PIPA_LL_skj_length_DP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2015, 2022), ### Keep records between 2000 and 2014
+         species == "SKJ", ### Keep bigeye tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_LL_skj_length_DP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Skipjack longline after protections
+PIPA_LL_skj_length_AP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2023, 2025), ### Keep records between 2000 and 2014
+         species == "SKJ", ### Keep bigeye tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_LL_skj_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+### Skipjack purse-seine in PIPA
+```{r}
+### Skipjack purse-seine before protections
+PIPA_PS_skj_length_BP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 1953, 2014), ### Keep records between 2000 and 2014
+         species == "SKJ", ### Keep skipjack tuna only
+         gear == "purse_seine") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_PS_skj_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Skipjack purse-seine during protections
+PIPA_PS_skj_length_DP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2015, 2022), ### Keep records between 2000 and 2014
+         species == "SKJ", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_PS_skj_length_DP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Skipjack purse-seine after protections
+PIPA_PS_skj_length_AP <- length |>
+  filter(between(lon, -175.866, -169.706), ### Filter around PIPA
+         between(lat, -6.618, -0.983),
+         between(year, 2023, 2025), ### Keep records between 2000 and 2014
+         species == "SKJ", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PIPA_PS_skj_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+
+## Palau National Marine Sanctuary
+
+### PNMS Bigeye
+```{r}
+### Longline pre-protection
+PNMS_LL_bet_length_BP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 1953, 2019), ### Keep records between 2000 and 2014
+         species == "BET", ### Keep skipjack tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_LL_bet_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### After protection
+PNMS_LL_bet_length_AP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 2020, 2025), ### Keep records between 2000 and 2014
+         species == "BET", ### Keep skipjack tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_LL_bet_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+### PNMS purse-seine Bigeye
+```{r}
+### Before protection
+PNMS_PS_bet_length_BP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 1953, 2019), ### Keep records between 2000 and 2014
+         species == "BET", ### Keep skipjack tuna only
+         gear == "purse_seine") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_PS_bet_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### After protection
+PNMS_PS_bet_length_AP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 2020, 2025), ### Keep records between 2000 and 2014
+         species == "BET", ### Keep skipjack tuna only
+         gear == "purse_seine") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_PS_bet_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+### PNMS Yellowfin longline
+```{r}
+### Before protection
+PNMS_LL_yft_length_BP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 1953, 2019), ### Keep records between 2000 and 2014
+         species == "YFT", ### Keep skipjack tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_LL_yft_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### After protection
+PNMS_LL_yft_length_AP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 2020, 2025), ### Keep records between 2000 and 2014
+         species == "YFT", ### Keep skipjack tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_LL_yft_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+### PNMS purse-seine yellowfin
+```{r}
+### Before protection
+PNMS_PS_yft_length_BP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 1953, 2019), ### Keep records between 2000 and 2014
+         species == "YFT", ### Keep skipjack tuna only
+         gear == "purse_seine") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_PS_yft_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### After protection
+PNMS_PS_yft_length_AP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 2020, 2025), ### Keep records between 2000 and 2014
+         species == "YFT", ### Keep skipjack tuna only
+         gear == "purse_seine") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_PS_yft_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+### PNMS longline skipjack
+```{r}
+### Before protection
+PNMS_LL_skj_length_BP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 1953, 2019), ### Keep records between 2000 and 2014
+         species == "SKJ", ### Keep skipjack tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_LL_skj_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### After protection
+PNMS_LL_skj_length_AP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 2020, 2025), ### Keep records between 2000 and 2014
+         species == "SKJ", ### Keep skipjack tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_LL_skj_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+```
+
+### PNMS purse-seine skipjack
+```{r}
+### Before protection
+PNMS_PS_skj_length_BP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 1953, 2019), ### Keep records between 2000 and 2014
+         species == "SKJ", ### Keep skipjack tuna only
+         gear == "purse_seine") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_PS_skj_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### After protection
+PNMS_PS_skj_length_AP <- length |>
+  filter(between(lon, 129, 137), ### Filter around PIPA
+         between(lat, 1, 12),
+         between(year, 2020, 2025), ### Keep records between 2000 and 2014
+         species == "SKJ", ### Keep skipjack tuna only
+         gear == "purse_seine") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+ ### uncount(freq) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = PNMS_PS_skj_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
 ```
 
