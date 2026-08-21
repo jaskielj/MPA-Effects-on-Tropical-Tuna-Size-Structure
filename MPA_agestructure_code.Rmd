@@ -506,19 +506,18 @@ ggplot(data = PIPA_PS_skj_length,
 ```
 
 
-## Palau National Marine Sanctuary
+## Palau National Marine Sanctuary (+5 degree buffer)
 
 ### PNMS Bigeye
 ```{r}
 ### Longline pre-protection
 PNMS_LL_bet_length_BP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 1953, 2019), ### Keep records between 2000 and 2014
-         species == "BET", ### Keep skipjack tuna only
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2019), ### Keep records between 1953 and 2019
+         species == "BET", ### Keep bigeye tuna only
          gear == "longline") |> ### Focus on longline
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -532,13 +531,12 @@ ggplot(data = PNMS_LL_bet_length_BP,
 
 ### After protection
 PNMS_LL_bet_length_AP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 2020, 2025), ### Keep records between 2000 and 2014
-         species == "BET", ### Keep skipjack tuna only
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 2020, 2025), ### Keep records between 2020 and 2025
+         species == "BET", ### Keep bigeye tuna only
          gear == "longline") |> ### Focus on longline
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -549,19 +547,39 @@ ggplot(data = PNMS_LL_bet_length_AP,
                       vline_width = 1,
                       quantile_lines = T,
                       quantiles = 2)
+
+### Whole time series for plotting
+PNMS_LL_bet_length <- length |>
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2025), ### Keep records between 1953 and 2025
+         species == "BET", ### Keep bigeye tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+#png("PNMS_5degbuff_LL_bet_length.png", units = "in", width = 8, height = 5, res = 1200)
+ggplot(data = PNMS_LL_bet_length,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
 ```
 
 ### PNMS purse-seine Bigeye
 ```{r}
 ### Before protection
 PNMS_PS_bet_length_BP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 1953, 2019), ### Keep records between 2000 and 2014
-         species == "BET", ### Keep skipjack tuna only
-         gear == "purse_seine") |> ### Focus on longline
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2019), ### Keep records between 1953 and 2019
+         species == "BET", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -575,13 +593,12 @@ ggplot(data = PNMS_PS_bet_length_BP,
 
 ### After protection
 PNMS_PS_bet_length_AP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 2020, 2025), ### Keep records between 2000 and 2014
-         species == "BET", ### Keep skipjack tuna only
-         gear == "purse_seine") |> ### Focus on longline
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 2020, 2025), ### Keep records between 2020 and 2025
+         species == "BET", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -592,19 +609,39 @@ ggplot(data = PNMS_PS_bet_length_AP,
                       vline_width = 1,
                       quantile_lines = T,
                       quantiles = 2)
+
+### Whole time series for plotting
+PNMS_PS_bet_length <- length |>
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2025), ### Keep records between 1953 and 2025
+         species == "BET", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+#png("PNMS_5degbuff_PS_bet_length.png", units = "in", width = 8, height = 5, res = 1200)
+ggplot(data = PNMS_PS_bet_length,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
 ```
 
 ### PNMS Yellowfin longline
 ```{r}
 ### Before protection
 PNMS_LL_yft_length_BP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 1953, 2019), ### Keep records between 2000 and 2014
-         species == "YFT", ### Keep skipjack tuna only
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2019), ### Keep records between 1953 and 2019
+         species == "YFT", ### Keep yellowfin tuna only
          gear == "longline") |> ### Focus on longline
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -618,13 +655,12 @@ ggplot(data = PNMS_LL_yft_length_BP,
 
 ### After protection
 PNMS_LL_yft_length_AP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 2020, 2025), ### Keep records between 2000 and 2014
-         species == "YFT", ### Keep skipjack tuna only
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 2020, 2025), ### Keep records between 2020 and 2025
+         species == "YFT", ### Keep yellowfin tuna only
          gear == "longline") |> ### Focus on longline
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -635,19 +671,39 @@ ggplot(data = PNMS_LL_yft_length_AP,
                       vline_width = 1,
                       quantile_lines = T,
                       quantiles = 2)
+
+### Whole time series for plotting
+PNMS_LL_yft_length <- length |>
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2025), ### Keep records between 1953 and 2025
+         species == "YFT", ### Keep yellowfin tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+#png("PNMS_5degbuff_LL_yft_length.png", units = "in", width = 8, height = 5, res = 1200)
+ggplot(data = PNMS_LL_yft_length,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
 ```
 
 ### PNMS purse-seine yellowfin
 ```{r}
 ### Before protection
 PNMS_PS_yft_length_BP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 1953, 2019), ### Keep records between 2000 and 2014
-         species == "YFT", ### Keep skipjack tuna only
-         gear == "purse_seine") |> ### Focus on longline
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2019), ### Keep records between 1953 and 2019
+         species == "YFT", ### Keep yellowfin tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -661,13 +717,12 @@ ggplot(data = PNMS_PS_yft_length_BP,
 
 ### After protection
 PNMS_PS_yft_length_AP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 2020, 2025), ### Keep records between 2000 and 2014
-         species == "YFT", ### Keep skipjack tuna only
-         gear == "purse_seine") |> ### Focus on longline
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 2020, 2025), ### Keep records between 2020 and 2025
+         species == "YFT", ### Keep yellowfin tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -678,19 +733,39 @@ ggplot(data = PNMS_PS_yft_length_AP,
                       vline_width = 1,
                       quantile_lines = T,
                       quantiles = 2)
+
+### Whole time series for plotting
+PNMS_PS_yft_length <- length |>
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2025), ### Keep records between 1953 and 2025
+         species == "YFT", ### Keep yellowfin tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+#png("PNMS_5degbuff_PS_yft_length.png", units = "in", width = 8, height = 5, res = 1200)
+ggplot(data = PNMS_PS_yft_length,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
 ```
 
 ### PNMS longline skipjack
 ```{r}
 ### Before protection
 PNMS_LL_skj_length_BP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 1953, 2019), ### Keep records between 2000 and 2014
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2019), ### Keep records between 1953 and 2019
          species == "SKJ", ### Keep skipjack tuna only
          gear == "longline") |> ### Focus on longline
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -704,13 +779,12 @@ ggplot(data = PNMS_LL_skj_length_BP,
 
 ### After protection
 PNMS_LL_skj_length_AP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 2020, 2025), ### Keep records between 2000 and 2014
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 2020, 2025), ### Keep records between 2020 and 2025
          species == "SKJ", ### Keep skipjack tuna only
          gear == "longline") |> ### Focus on longline
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -721,19 +795,39 @@ ggplot(data = PNMS_LL_skj_length_AP,
                       vline_width = 1,
                       quantile_lines = T,
                       quantiles = 2)
+
+### Whole time series for plotting
+PNMS_LL_skj_length <- length |>
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2025), ### Keep records between 1953 and 2025
+         species == "SKJ", ### Keep skipjack tuna only
+         gear == "longline") |> ### Focus on longline
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+#png("PNMS_5degbuff_LL_skj_length.png", units = "in", width = 8, height = 5, res = 1200)
+ggplot(data = PNMS_LL_skj_length,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
 ```
 
 ### PNMS purse-seine skipjack
 ```{r}
 ### Before protection
 PNMS_PS_skj_length_BP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 1953, 2019), ### Keep records between 2000 and 2014
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2019), ### Keep records between 1953 and 2019
          species == "SKJ", ### Keep skipjack tuna only
-         gear == "purse_seine") |> ### Focus on longline
+         gear == "purse_seine") |> ### Focus on purse seine
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -747,13 +841,12 @@ ggplot(data = PNMS_PS_skj_length_BP,
 
 ### After protection
 PNMS_PS_skj_length_AP <- length |>
-  filter(between(lon, 129, 137), ### Filter around PIPA
-         between(lat, 1, 12),
-         between(year, 2020, 2025), ### Keep records between 2000 and 2014
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 2020, 2025), ### Keep records between 2020 and 2025
          species == "SKJ", ### Keep skipjack tuna only
-         gear == "purse_seine") |> ### Focus on longline
+         gear == "purse_seine") |> ### Focus on purse seine
   mutate(yq = paste(year, quarter)) |>
- ### uncount(freq) |>
   select(yq, species, length_cm)
 
 ### Plot
@@ -764,5 +857,213 @@ ggplot(data = PNMS_PS_skj_length_AP,
                       vline_width = 1,
                       quantile_lines = T,
                       quantiles = 2)
+
+### Whole time series for plotting
+PNMS_PS_skj_length <- length |>
+  filter(between(lon, 124.5, 142), ### Filter around PNMS w/ 5 degree buffer
+         between(lat, -3.5, 16.5),
+         between(year, 1953, 2025), ### Keep records between 1953 and 2025
+         species == "SKJ", ### Keep skipjack tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+#png("PNMS_5degbuff_PS_skj_length.png", units = "in", width = 8, height = 5, res = 1200)
+ggplot(data = PNMS_PS_skj_length,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
+```
+
+## Galapagos MPA
+###Galapagos purse seine bigeye with 5 degree buffer (no LL data within these spatial constraints)
+```{r}
+### Pre-protections
+GMR_PS_bet_length_BP <- length |>
+  filter(between(lon, -97.681, -83.4989), ### Filter around GMR + 5 degree buffer
+         between(lat, -7.1135, 7.3534),
+         between(year, 1953, 1997), ### Keep records between 1953 and 1997
+         species == "BET", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse-seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = GMR_PS_bet_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### After Protections
+GMR_PS_bet_length_AP <- length |>
+  filter(between(lon, -97.681, -83.4989), ### Filter around GMR + 5 degree buffer
+         between(lat, -7.1135, 7.3534),
+         between(year, 1998, 2025), ### Keep records between 1998 and 2025
+         species == "BET", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse-seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = GMR_PS_bet_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Whole time series for plotting
+GMR_PS_bet_length <- length |>
+  filter(between(lon, -97.681, -83.4989), ### Filter around GMR + 5 degree buffer
+         between(lat, -7.1135, 7.3534),
+         between(year, 1953, 2025), ### Keep records between 1953 and 2025
+         species == "BET", ### Keep bigeye tuna only
+         gear == "purse_seine") |> ### Focus on purse-seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+#png("GMR_5degbuff_PS_bet_length.png", units = "in", width = 8, height = 5, res = 1200)
+ggplot(data = GMR_PS_bet_length,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
+```
+
+### Galapagos (+5 degree buffer) yellowfin purse seine (no longline data)
+```{r}
+### Before protections
+GMR_PS_yft_length_BP <- length |>
+  filter(between(lon, -97.681, -83.4989), ### Filter around GMR + 5 degree buffer
+         between(lat, -7.1135, 7.3534),
+         between(year, 1953, 1997), ### Keep records between 1953 and 1997
+         species == "YFT", ### Keep yellowfin tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = GMR_PS_yft_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### After protections
+GMR_PS_yft_length_AP <- length |>
+  filter(between(lon, -97.681, -83.4989), ### Filter around GMR + 5 degree buffer
+         between(lat, -7.1135, 7.3534),
+         between(year, 1998, 2025), ### Keep records between 1998 and 2025
+         species == "YFT", ### Keep yellowfin tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = GMR_PS_yft_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Whole time series for plotting
+GMR_PS_yft_length <- length |>
+  filter(between(lon, -97.681, -83.4989), ### Filter around GMR + 5 degree buffer
+         between(lat, -7.1135, 7.3534),
+         between(year, 1953, 2025), ### Keep records between 1953 and 2025
+         species == "YFT", ### Keep yellowfin tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+#png("GMR_5degbuff_PS_yft_length.png", units = "in", width = 8, height = 5, res = 1200)
+ggplot(data = GMR_PS_yft_length,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
+```
+
+### GMR (+5 degree buffer) skipjack purse seine (no longline data)
+```{r}
+### Before protections
+GMR_PS_skj_length_BP <- length |>
+  filter(between(lon, -97.681, -83.4989), ### Filter around GMR + 5 degree buffer
+         between(lat, -7.1135, 7.3534),
+         between(year, 1953, 1997), ### Keep records between 1953 and 1997
+         species == "SKJ", ### Keep skipjack tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = GMR_PS_skj_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### After Protections
+GMR_PS_skj_length_AP <- length |>
+  filter(between(lon, -97.681, -83.4989), ### Filter around GMR + 5 degree buffer
+         between(lat, -7.1135, 7.3534),
+         between(year, 1998, 2025), ### Keep records between 1998 and 2025
+         species == "SKJ", ### Keep skipjack tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+ggplot(data = GMR_PS_skj_length_AP,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+### Whole time series for plotting
+GMR_PS_skj_length <- length |>
+  filter(between(lon, -97.681, -83.4989), ### Filter around GMR + 5 degree buffer
+         between(lat, -7.1135, 7.3534),
+         between(year, 1953, 2025), ### Keep records between 1953 and 2025
+         species == "SKJ", ### Keep yellowfin tuna only
+         gear == "purse_seine") |> ### Focus on purse seine
+  mutate(yq = paste(year, quarter)) |>
+  select(yq, species, length_cm)
+
+### Plot
+#png("GMR_5degbuff_PS_skj_length.png", units = "in", width = 8, height = 5, res = 1200)
+ggplot(data = GMR_PS_skj_length,
+       mapping = aes(x = length_cm,
+                     y = factor(yq))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+#dev.off()
 ```
 
