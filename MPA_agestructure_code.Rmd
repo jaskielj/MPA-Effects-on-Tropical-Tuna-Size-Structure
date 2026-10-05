@@ -98,6 +98,21 @@ ggplot(data = PIPA_LL_bet_length,
                       quantile_lines = T,
                       quantiles = 2)
 #dev.off()
+
+### Trying a different plot, and not quarterly
+PIPA_LL_bet_length <- length |>
+  filter(between(lon, -179.999, -164.706), ### Filter around PIPA + 5 degree buffer
+         between(lat, -11.618, 4.983),
+         between(year, 1953, 2025), ### Keep all records
+         species == "BET", ### Keep bigeye tuna only
+         gear == "longline") |> ### Focus on longline
+  select(year, species, length_cm)
+#group_by(year, species) |>
+  #summarise(median_length_cm = median(length_cm, na.rm = TRUE)) |>
+
+ggplot(data = PIPA_LL_bet_length,
+       mapping = aes(x = year,
+                     y = median_length_cm))
 ```
 
 ### PIPA Bigeye from purse-seine
