@@ -1730,11 +1730,23 @@ ggplot(data = HSP_PS_skj_length,
 #dev.off()
 ```
 
+
+
+
+
+############################################################################################################################
+############################################################################################################################
+############################################################################################################################
+################################################# PART TWO - LOCKING IN ####################################################
+############################################################################################################################
+############################################################################################################################
+############################################################################################################################
+
 ### Adding some scripts from Lynham and Villasenor-Derbez (2024) to use a spatial grid rather than what I've been using, which has been coarse latitude and longitude-based analyses that didn't allow for precise calculation of changes in tuna length near (<100 nm) and far (100-200 nm) from each MPA
 ```{r}
-### downloaded 00_set_up.R from https://github.com/jcvdav/LSMPA_spillover/blob/main
 ## SET UP ######################################################################
 #install.packages("pacman")
+library(pacman)
 
 # Load packages ----------------------------------------------------------------
 pacman::p_load(
@@ -1747,7 +1759,9 @@ pacman::p_load(
 )
 
 # Source custom functions ------------------------------------------------------
-source("/Users/Jacob/Documents/MPA Effects on Tuna Size Structure/00_set_up.R")
+### downloaded 00_set_up.R from https://github.com/jcvdav/LSMPA_spillover/blob/main
+### This document has necessary custom functions and color pallettes, amongst other things
+source("00_set_up.R") 
 
 # Define functions -------------------------------------------------------------
 # This function assigns a "near" or "far" category to each point, depending on
@@ -1758,18 +1772,26 @@ assign_near_far <- function(dist, x){
             T ~ NA_character_)
 }
 
-
-###FLAG: stopped here 10/7
-
 # Load data --------------------------------------------------------------------
-data <- readRDS(file = here("data", "processed", "rfmo_all_annual_gear_flag.rds"))
-lmpas <- st_read(dsn = here("data", "processed", "clean_lmpas.gpkg"))
+length <- read_rds("wcpfc_length_data.rds")
+catch_purse_seine <- read_rds("allrfmo_month_1deg_purseseine.rds")
+catch_longline <- read_rds("allrfmo_month_5deg_longline_flag.rds")
+
+
+
+data <- readRDS("rfmo_all_annual_gear_flag.rds") ### Data from JC's paper
+
+install.packages("sf")
+library(sf)
+lmpas <- st_read("clean_lmpas.gpkg") ### Data from JC's paper; this one is necessary for creating a spatial grid
 
 
 ## PROCESSING ##################################################################
 
 # Find cells covered by MPAs ---------------------------------------------
 
+#install.packages("terra")
+library(terra)
 # First, build some rasters
 cells_1x1_within <-
   rast(nrows = 180, ncols = 360,
@@ -1816,9 +1838,57 @@ cells_within <- bind_rows(cells_1x1_within,
 # - Then, remove cells that we've identified as being FULLY covered by an MPA
 # - We then calculate the distance of each point to the nearest MP
 
+#FLAG: This appears to be the first place where I'd add in my length data instead of the catch data JC uses
+
 # Create a single feature to keep things tidy
 lmpas_sfc <- lmpas %>%
   st_union()
+
+#install.packages("units")
+library(units)
+
+# length dataframe does not have a grid option, but you could easily add that field and make it 1x1 for PS and 5x5 for LL
+length <- length %>%
+  mutate(grid = )
+
+
+
+
+
+rfmo_spat_grid_length <- length %>%
+  select(grid, lat, long) %>%
+  distinct() %>%
+  ### remove cells that fall fully within MPAs
+  anti_join(cells_within, by = c("grid", "lat", "lon")) %>%
+  ### convert to spatial object
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% ### try a more pacific-centered projection to see if it changes anything?
+  #calculate distance to the nearest MPA
+  mutate(dist = st_distance(., lmpas_sfc),
+         dist = units::set_units(x = dist, value = "nautical_miles"), ### distances are now in nm
+         dist = as.numeric(dist)) %>%
+  ### keep only grid cells within 300 nautical miles of an MPA (note this is less than 600 that JC used but less clunky data is more gooder)
+  filter(dist <= 300) %>%
+  
+  ##FLAG: stopped here 10-8 at 4pm; still need to wrap my head around this next bit of code for the treatments
+  ### Build a series of dummies
+  mutate(treatment_100 = assign_near_far(dist = dist, x = 100),
+         treatment_200 = assign_near_far(dist = dist, x = 200),
+         treatment_300 = assign_near_far(dist = dist, x = 300),
+         near_100 = case_when(treatment_100 == "near" ~ 1,
+                              treatment_100 == "far" ~ 0,
+                              T ~ NA),
+         near_200 = case_when(treatment_200 == "near" ~ 1,
+                              treatment_200 == "far" ~ 0,
+                              T ~ NA),
+         near_300 = case_when(treatment_300 == "near" ~ 1,
+                              treatment_300 == "far" ~ 0,
+                              T ~ NA)) %>%
+  # We now add information on which one is the nearest MPA
+  st_join(lmpas, st_nearest_feature)
+
+
+
+
 
 # Make grid with distances and donuts ------------------------------------------
 rfmo_spat_grid <- data %>%
@@ -1831,7 +1901,7 @@ rfmo_spat_grid <- data %>%
   st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
   # Calculate distance to nearest MPA
   mutate(dist = st_distance(., lmpas_sfc),
-         dist = set_units(x = dist, value = "nautical_miles"), # From now on, distances are in nautical mules
+         dist = units::set_units(x = dist, value = "nautical_miles"), # From now on, distances are in nautical mules
          dist = as.numeric(dist)) %>%
   # We'll keep only grid cells within 600 nautical miles of an MPA
   filter(dist <= 600) %>%
@@ -1863,7 +1933,229 @@ rfmo_grid <- rfmo_spat_grid %>%
   select(id, grid, lat, lon, wdpaid, name, dist, contains("treatment"), contains("near_"), ocean, year_enforced, month_enforced)
 
 ## EXPORT ######################################################################
-saveRDS(object = rfmo_grid,
-        file = here("data", "processed", "distance_grid.rds"))
+# saveRDS(object = rfmo_grid,
+#         file = here("data", "processed", "distance_grid.rds"))
+```
+
+###Trying to adapt JC's code to start plotting
+```{r}
+# Source custom funcions -------------------------------------------------------
+source("00_set_up.R")
+
+img <- function(pic) {here("data", "raw", "gear_fish_pics", paste0(pic, ".svg"))}
+
+# Load data --------------------------------------------------------------------
+most_relevant_panel <- readRDS("annual_relevant_mpa_gears_estimation_panel.rds")
+
+## VISUALIZE ###################################################################
+# BACI plots (Panels A-D) ------------------------------------------------------
+# We first build BACI plots showing the mean CPUE for each of the before, after,
+# control, impact groups. There is one main plot for each gear, and then a plot
+# for a "good" and a "bad" example.
+
+# Panel A - For all purse seine data
+ps_data <- most_relevant_panel %>%
+  filter(!wdpaid == "555512151", # Chagos is reported in different CPUE units
+         gear == "purse_seine") %>%
+  rename(cpue = cpue_tot)
+
+delta_cpue(ps_data)
+
+ps_baci_plot <- baci_plot(data = ps_data) +
+  guides(color = "none") +
+  theme(legend.position = "inside",
+        legend.position.inside = c(0, 0),
+        legend.justification = c(0, 0)) +
+  labs(y = "CPUE (MT / set)",
+       fill = "Distance") +
+  annotate(geom = "text",
+           x = c(1.25, 1.95),
+           y = c(31, 25),
+           label = c("Change in CPUE near: 22.5%",
+                     "Change in CPUE far: 8.7%"),
+           color = c(gear_palette["PS"], "gray50"))
+ps_baci_plot
+# Panel B "spillover gradient" -------------------------------------------------
+# Now we build plots where we show the change in CPUE as one moves away from the
+# MPA border. We also build one for PS, one for LL, and then one for a good and
+# a bad example.
+ps_delta_cpue_dist_data <- most_relevant_panel %>%
+  filter(!wdpaid == "555512151", # Chagos is reported in different CPUE units!wdpaid == "555512151",
+         gear == "purse_seine",
+         !is.na(near_100)) %>%
+  group_by(id, wdpaid, name, dist, lat, lon, event, near_100, post) %>%
+  summarize(effort = sum(effort),
+            tot_mt = sum(tot_mt),
+            .groups = "drop") %>%
+  ungroup() %>%
+  mutate(cpue = tot_mt / effort,
+         dist = (floor(dist / 25) * 25) + 12.5,
+         dist_f = as.factor(-1 * dist))
+
+all_ps_delta_cpue_dist_plot <- ps_delta_cpue_dist_data %>%
+  group_by(post, dist) %>%
+  summarize(cpue = mean(cpue, na.rm = T), .groups = "drop") %>%
+  ungroup() %>%
+  pivot_wider(names_from = post,
+              values_from = cpue, names_prefix = "cpue_") %>%
+  mutate(delta = cpue_1 - cpue_0,
+         pct_change = delta / cpue_0) %>%
+  ggplot(aes(x = dist, y = delta)) +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 100, linetype = "dotted") +
+  annotate(geom = "text", x = c(50, 150), y = 10, label = c("Near", "Far")) +
+  geom_smooth(method = "loess", span = 0.9,
+              fill = unname(gear_palette)[1],
+              color = unname(gear_palette)[1]) +
+  geom_point(shape = 21, size = 2,
+             fill = "#08519B",
+             color = "black") +
+  scale_size_continuous(labels = scales::percent) +
+  labs(x = "Distance from border (NM)",
+       y = "Change in CPUE (MT / set)")
+
+# Combine the panels -----------------------------------------------------------
+p <- plot_grid(ps_baci_plot,
+               all_ps_delta_cpue_dist_plot,
+               labels = "auto")
+p
+```
+
+
+
+
+
+
+
+### Regressions
+```{r}
+# Source custom functions ------------------------------------------------------
+source("00_set_up.R")
+
+# Load data --------------------------------------------------------------------
+annual_panel <- readRDS("annual_full_estimation_panel.rds")
+most_relevant_panel <- readRDS("annual_relevant_mpa_gears_estimation_panel.rds")
+
+# SOME CHECKS BEFORE PROCEEDING TO ANALYSIS
+# There should be 9 LSMPAS in the main regression panel for purse seine
+length(unique(annual_panel[annual_panel$gear == "purse_seine",]$name)) == 9
+# There should be 6 LMPSAS int he most relevant panel for purse seine
+length(unique(most_relevant_panel[most_relevant_panel$gear == "purse_seine",]$name)) == 6
+
+# ## PROCESSING ##################################################################
+# Estimate DiD with all the data -----------------------------------------------
+# Step 1: no fixed effects whatsoever.
+install.packages("fixest")
+library(fixest)
+step1 <- feols(log(cpue_tot) ~ post + near + post:near,
+               panel.id = ~id + year,
+               data = annual_panel,
+               subset = ~gear == "purse_seine",
+               vcov = "IID")
+
+# Step 2: Control for unobserved characteristics in space with grid-id fixed effects
+step2 <- feols(log(cpue_tot) ~ post + near + post:near | id,
+               panel.id = ~id + year,
+               data = annual_panel,
+               subset = ~gear == "purse_seine",
+               vcov = conley(cutoff = 200))
+
+# Step 3: Now add fixed effects by fleet to account for unobserved fleet-specific characteristics
+step3 <- feols(log(cpue_tot) ~ post + near + post:near | id + flag,
+               panel.id = ~id + year,
+               data = annual_panel,
+               subset = ~gear == "purse_seine",
+               vcov = conley(cutoff = 200))
+
+# Step4: Now add fixed effects effects by mpa-gear-year to account for time varying fishery-specific changes
+step4 <- feols(log(cpue_tot) ~ post + near + post:near | id + flag + wdpaid ^ year,
+               panel.id = ~id + year,
+               data = annual_panel,
+               subset = ~gear == "purse_seine",
+               vcov = conley(cutoff = 200))
+
+step5 <- feols(log(cpue_tot) ~ post + near + post:near + oni_avg:wdpaid + I(oni_avg ^ 2):wdpaid | id + flag + wdpaid,
+               panel.id = ~id + year,
+               data = annual_panel,
+               subset = ~gear == "purse_seine",
+               vcov = conley(cutoff = 200))
+
+# Estimate DiD with subsamples of relevant MPA-gear combinations ---------------
+# Main specification
+# Step 1: no fixed effects whatsoever.
+step1_r <- feols(log(cpue_tot) ~ post + near + post:near,
+                 panel.id = ~id + year,
+                 data = most_relevant_panel,
+                 subset = ~gear == "purse_seine",
+                 vcov = "iid")
+
+# Step 2: Control for unobserved characteristics in space with grid-id fixed effects
+step2_r <- feols(log(cpue_tot) ~ post + near + post:near | id,
+                 panel.id = ~id + year,
+                 data = most_relevant_panel,
+                 subset = ~gear == "purse_seine",
+                 vcov = conley(cutoff = 200))
+
+# Step 3: Now add fixed effects by fleet to account for unobserved fleet-specific characteristics
+step3_r <- feols(log(cpue_tot) ~ post + near + post:near | id + flag,
+                 panel.id = ~id + year,
+                 data = most_relevant_panel,
+                 subset = ~gear == "purse_seine",
+                 vcov = conley(cutoff = 200))
+
+# Step4: Now add fixed effects effects by mpa-gear-year to account for time varying fishery-specific changes
+step4_r <- feols(log(cpue_tot) ~ post + near + post:near | id + flag + wdpaid ^ year,
+                 panel.id = ~id + year,
+                 data = most_relevant_panel,
+                 subset = ~gear == "purse_seine",
+                 vcov = conley(cutoff = 200))
+
+# Step 5: Add quadratic ENSO terms
+step5_r <- feols(log(cpue_tot) ~ post + near + post:near + wdpaid:oni_avg + wdpaid:I(oni_avg ^ 2) | id + flag + wdpaid,
+                 panel.id = ~id + year,
+                 data = most_relevant_panel,
+                 subset = ~gear == "purse_seine",
+                 vcov = conley(cutoff = 200))
+
+## Extract gear-specific coefficients ------------------------------------------
+gear_stats <- step4_r %>%
+  broom::tidy(.id = "sample", conf.int = TRUE, conf.level = 0.95) %>%
+  filter(str_detect(term, ":")) %>%
+  mutate(sample = "PS") %>%
+  mutate(sample = str_remove(sample, ".+; sample: "),
+         gear = str_sub(sample, 1, 2),
+         mpa = str_remove(sample, "LL |PS "),
+         mpa = fct_reorder(mpa, estimate, max),
+         gear = ifelse(gear == "PS", "Purse seine", "Longline")) %>%
+  filter(!sample == "Full sample")
+
+
+## EXPORT ######################################################################
+
+main_reg <- list(step1,
+                 step2,
+                 step3,
+                 step4,
+                 step5)
+
+relevant_mpa_gear_reg <- list(step1_r,
+                              step2_r,
+                              step3_r,
+                              step4_r,
+                              step5_r)
+
+# Export models ----------------------------------------------------------------
+# Main models
+# saveRDS(object = main_reg,
+#         file = here("data", "output", "main_reg.rds"))
+# 
+# # Relevant MPA-gear combinations
+# saveRDS(object = relevant_mpa_gear_reg,
+#         file = here("data", "output", "relevant_mpa_gear_reg.rds"))
+# 
+# # Export table of MPA and gears ------------------------------------------------
+# saveRDS(object = gear_stats,
+#         file = here("data", "output", "relevant_mpa_gear_combination_model_coefs.rds"))
 ```
 
