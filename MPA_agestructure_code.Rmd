@@ -1781,7 +1781,7 @@ catch_longline <- read_rds("allrfmo_month_5deg_longline_flag.rds")
 
 data <- readRDS("rfmo_all_annual_gear_flag.rds") ### Data from JC's paper
 
-install.packages("sf")
+#install.packages("sf")
 library(sf)
 lmpas <- st_read("clean_lmpas.gpkg") ### Data from JC's paper; this one is necessary for creating a spatial grid
 
@@ -1847,21 +1847,24 @@ lmpas_sfc <- lmpas %>%
 #install.packages("units")
 library(units)
 
-# length dataframe does not have a grid option, but you could easily add that field and make it 1x1 for PS and 5x5 for LL
-length <- length %>%
-  mutate(grid = )
+# length dataframe does not have a grid column, but you could easily add that field and make it 1x1 for PS and 5x5 for LL
+length_onlyPSLL <- length %>%
+  filter(gear %in% c("longline", "purse_seine")) %>%
+  mutate(grid = case_when(gear == "longline" ~ "5x5",
+                          gear == "purse_seine" ~ "1x1",
+                          TRUE ~ NA_character_))
 
+length_onlyPSLL %>%
+  filter(is.na(lon) | is.na(lat))
 
-
-
-
-rfmo_spat_grid_length <- length %>%
-  select(grid, lat, long) %>%
+rfmo_spat_grid_length <- length_onlyPSLL %>%
+  select(grid, lat, lon) %>%
+  filter(!is.na(lon), !is.na(lat)) %>%
   distinct() %>%
   ### remove cells that fall fully within MPAs
   anti_join(cells_within, by = c("grid", "lat", "lon")) %>%
   ### convert to spatial object
-  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% ### try a more pacific-centered projection to see if it changes anything?
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% ### FLAG: try a more pacific-centered projection to see if it changes anything?
   #calculate distance to the nearest MPA
   mutate(dist = st_distance(., lmpas_sfc),
          dist = units::set_units(x = dist, value = "nautical_miles"), ### distances are now in nm
@@ -1886,10 +1889,20 @@ rfmo_spat_grid_length <- length %>%
   # We now add information on which one is the nearest MPA
   st_join(lmpas, st_nearest_feature)
 
+# Now convert it into a data frame
+rfmo_grid_length <- rfmo_spat_grid_length %>%
+  bind_cols(st_coordinates(.)) %>%
+  st_drop_geometry() %>%
+  rename(lon = X, lat = Y) %>%
+  group_by(lat, lon) %>%
+  mutate(id = cur_group_id()) %>%
+  ungroup() %>%
+  select(id, grid, lat, lon, wdpaid, name, dist, contains("treatment"), contains("near_"), ocean, year_enforced, month_enforced)
 
 
 
 
+##````````` old 
 # Make grid with distances and donuts ------------------------------------------
 rfmo_spat_grid <- data %>%
   # Build distinct lat, lon pairs by grid type
@@ -1921,7 +1934,6 @@ rfmo_spat_grid <- data %>%
   # We now add information on which one is the nearest MPA
   st_join(lmpas, st_nearest_feature)
 
-
 # Now convert it into a data frame
 rfmo_grid <- rfmo_spat_grid %>%
   bind_cols(st_coordinates(.)) %>%
@@ -1932,10 +1944,197 @@ rfmo_grid <- rfmo_spat_grid %>%
   ungroup() %>%
   select(id, grid, lat, lon, wdpaid, name, dist, contains("treatment"), contains("near_"), ocean, year_enforced, month_enforced)
 
+
 ## EXPORT ######################################################################
 # saveRDS(object = rfmo_grid,
 #         file = here("data", "processed", "distance_grid.rds"))
 ```
+
+
+###Make panel
+```{r}
+# rfmo_grid_length is your spatial file, equivalent to distance_grid.rds
+
+# Load data --------------------------------------------------------------------
+distance_grid <- rfmo_grid_length
+rfmo_data <- length_onlyPSLL
+
+## PROCESSING ##################################################################
+
+# X ----------------------------------------------------------------------------
+combined <- rfmo_data %>%
+  left_join(distance_grid, by = c("grid", "lon", "lat")) %>%
+  mutate(id = paste(lat, lon, sep = "_"),
+         event = year - year_enforced,
+         post = 1 * (event >= 0))
+
+##check_mt(combined, cutoff = 0) ##FLAG: check out what this does; I run into a vmem error so if it's not necessary keep commented out
+
+#check_effort_gear(combined)
+
+#test(combined)
+
+## EXPORT ######################################################################
+
+# X ----------------------------------------------------------------------------
+# saveRDS(object = combined,
+#         file = here("data", "processed", "annual_panel.rds"))
+
+colnames(combined) #variables to look at: gear; species; length_cm; name (MPA names); dist (distance to MPAs in nm); near_100; near_200;
+#near_300; post
+table(combined$name)
+
+
+  #   Chagos Marine Protected Area                  Coral Sea - NPZ         Galápagos Marine Reserve Motu Motiro Hiva (Salas y Gómez) 
+  #                            423                           706295                            36666                            68503 
+  #         Nazca-Desventuradas MP              Niue Moana Mahu MPA                        Palau NMS                Papahānaumokuākea 
+  #                          12298                           626401                          6305862                           289433 
+  # Phoenix Islands Protected Area  Pitcairn Islands Marine Reserve                     PRI (Jarvis)                       PRI (Wake) 
+  #                        2960470                           336846                          1113947                           157232 
+  #                  Revillagigedo 
+  #                            254 
+
+plot_data <- combined %>%
+  filter(
+    species %in% c("SKJ", "YFT", "BET", "ALB"),
+    post %in% c(0, 1),
+    !is.na(length_cm)
+  ) %>%
+  mutate(
+    period = factor(
+      post,
+      levels = c(0, 1),
+      labels = c("Before protection", "After protection")
+    )
+  ) %>%
+  group_by(species, period) %>%
+  summarise(
+    n = n(),
+    mean_length = mean(length_cm),
+    se = sd(length_cm) / sqrt(n),
+    .groups = "drop"
+  )
+
+ggplot(plot_data, aes(x = period, y = mean_length, fill = period)) +
+  geom_col(width = 0.7) +
+  geom_errorbar(
+    aes(ymin = mean_length - se, ymax = mean_length + se),
+    width = 0.15,
+    na.rm = TRUE
+  ) +
+  facet_wrap(~ species) +
+  labs(
+    x = NULL,
+    y = "Mean length (cm)",
+    title = "Mean fish length before and after protection"
+  ) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+plot_data <- combined %>%
+  filter(
+    species %in% c("SKJ", "YFT", "BET", "ALB"),
+    post %in% c(0, 1),
+    !is.na(length_cm)
+  ) %>%
+  mutate(
+    period = factor(
+      post,
+      levels = c(0, 1),
+      labels = c("Before protection", "After protection")
+    )
+  )
+
+ggplot(plot_data, aes(x = period, y = length_cm, fill = period)) +
+  geom_boxplot() +
+  facet_wrap(~ species) +
+  labs(
+    x = NULL,
+    y = "Length (cm)",
+  ) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+
+
+
+
+
+### PIPA Longline bigeye pre protections
+PIPA_LL_bet_length_BP <- combined %>%
+  filter(name == "Phoenix Islands Protected Area",
+         post %in% c(0, 1),
+         species == "BET", ### Keep bigeye tuna only
+         gear == "longline")%>% ### Focus on longline
+  select(species, length_cm, post)
+
+library(ggridges)
+### Plot
+ggplot(data = PIPA_LL_bet_length_BP,
+       mapping = aes(x = length_cm,
+                     y = factor(post))) +
+  geom_density_ridges(vline_colour = "black",
+                      vline_width = 1,
+                      quantile_lines = T,
+                      quantiles = 2)
+
+
+PIPA_LL_bet_length_line <- combined %>%
+  filter(name == "Phoenix Islands Protected Area",
+         species == "BET",
+         gear == "longline",
+         !is.na(year),
+         !is.na(length_cm)) %>%
+  group_by(year) %>%
+  summarise(mean_length = mean(length_cm),
+            n = n(),
+            .groups = "drop")
+
+ggplot(PIPA_LL_bet_length_line, aes(x = year, y = mean_length)) +
+  geom_line(aes(group = 1), color = "grey50") +
+  geom_point(aes(color = "black"), size = 3) +
+  geom_smooth(
+    aes(group = 1),
+    method = "lm",
+    se = FALSE,
+    color = "black",
+    linetype = "dashed"
+  ) +
+  scale_color_manual(
+    values = c("0" = "steelblue", "1" = "firebrick"),
+    labels = c("0" = "Before protection", "1" = "After protection")
+  ) +
+  labs(
+    x = "Sampling year",
+    y = "Average length (cm)",
+    color = NULL,
+    title = "Phoenix Islands bigeye longline average length"
+  ) +
+  theme_classic()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ###Trying to adapt JC's code to start plotting
 ```{r}
@@ -1959,7 +2158,7 @@ ps_data <- most_relevant_panel %>%
          gear == "purse_seine") %>%
   rename(cpue = cpue_tot)
 
-delta_cpue(ps_data)
+#delta_cpue(ps_data)
 
 ps_baci_plot <- baci_plot(data = ps_data) +
   guides(color = "none") +
