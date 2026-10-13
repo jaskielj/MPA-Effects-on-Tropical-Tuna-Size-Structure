@@ -2204,5 +2204,12 @@ ggplot(PMNM_PS_skj_length_line, aes(x = year, y = mean_length)) +
 ```
 
 
+### Coral Sea - NPZ
+
+### PRI (Wake)
+
+### Galápagos Marine Reserve
+
+### Pitcairn Islands Marine Reserve
 
 ## END ##
